@@ -55,28 +55,29 @@ include_once "simplehtmldom_1_5/simple_html_dom.php";
 class Mog {
 	
 	public $name;
-	public $srcType;
 	public $srcOrigin;
-	public $srcImgUrl;
+	public $imgUrl;
 	public $srcViews;
 	public $srcFaves;
+	public $srcUrl;
 	public $rating;
 	public $rateBias;
 
-	public function __construct($name, $srcType, $srcOrigin, $srcImgUrl, $srcViews, $srcFaves) {
+	public function __construct($name, $imgUrl, $srcViews, $srcFaves, $srcUrl) {
 		$this->name = $name;
-		$this->srcType = $srcType;
-		$this->srcOrigin = $srcOrigin;
-		$this->srcImgUrl = $srcImgUrl;
+		// $this->srcOrigin = $srcOrigin;
+		$this->imgUrl = $imgUrl;
 		$this->srcViews = $srcViews;
 		$this->srcFaves = $srcFaves;
+		$this->srcUrl = $srcUrl;
 	}
 
-	public function save($mog) {
+	public function save() {
 		try {
 			$db = new PDO('mysql:host=localhost;dbname=MemeSlam;charset=utf8','root','');
-			$query = $db->prepare("insert into MogMaster (name,  srcType, srcOrigin, srcImgUrl, srcViews, srcFaves) values ($this->name, $this->srcType, $this->srcOrigin, $this->srcImgUrl, $this->srcViews, $this->srcFaves)");
-			$query->execute();
+			$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+			$query = $db->prepare("insert into MogMaster (name, imgUrl, srcViews, srcFaves, srcUrl) values (:name, :imgUrl, :srcViews, :srcFaves, :srcUrl)");
+			$query->execute(['name'=>$this->name, 'imgUrl'=>$this->imgUrl, 'srcViews'=>$this->srcViews, 'srcFaves'=>$this->srcFaves, 'srcUrl'=>$this->srcUrl]);
 		} catch (PDOException $e) {
 			die($e->getMessage());	
 		}
@@ -92,6 +93,8 @@ Functions for work
 **********************************/
 //Main Logic Function
 function mainExecute() {
+	//array for offline pages testing
+	$offlinePages = ['staticpages/Slender Man _ Know Your Meme.html','staticpages/Forever Alone _ Know Your Meme.html', 'staticpages/Zerg Rush _ Know Your Meme.html'];
 
 	//Regexes for matching values from extractions
 	$rgx_src = '/data-src="(.*)" src/'; //image url
@@ -116,7 +119,6 @@ function mainExecute() {
 	$meme_views = null;
 	$meme_origin = null;
 	$meme_year = null;
-	$meme_type = '';
 	$meme_learn_more = '';
 	
 	//support variables for logic
@@ -130,14 +132,17 @@ function mainExecute() {
 		//counter for tracking meme url index in $meme_href
 		$j = 0;
 
+		//used for offline pages array index
+		// $m = 0;
+
 		//pull and store scraped dom
 		if ($i == 0) { //for first page
-			// $html = getDOM('http://knowyourmeme.com/memes/popular');	
-			$html = getDOM('staticpages/kym_popular_1.html');	
-		} //else {//for other pages up to value i is set to
-		// 	$html = getDOM('http://knowyourmeme.com/memes/popular/page/' . $i);
-		// }
-
+			$html = getDOM('http://knowyourmeme.com/memes/popular');	
+			// $html = getDOM('staticpages/kym_popular_1.html');	
+		} else {//for other pages up to value i is set to
+			$html = getDOM('http://knowyourmeme.com/memes/popular/page/' . $i);
+		}
+		delay();
 		//These arrays should refer to the same memes on the same indexes
 		//extracts array used for meme images and titles
 		$img_content = extractContent($html, $meme_img_path);
@@ -160,39 +165,45 @@ function mainExecute() {
 			$meme_img_url = getValue($curr, $rgx_src, false, '');
 			preg_match($rgx_src, $curr, $matches);
 			$meme_img_url = $matches[1];
-			echo "Meme URL: ". $meme_img_url . "<br>";
+			echo "Meme IMG URL: " . $meme_img_url . "<br>";
 
 
 			//get href for current meme in $curr and set variable
 			preg_match($rgx_pg_href, $meme_href[$j], $matches);
-			$meme_learn_more = 'http://knowyourmeme.com' . $matches[1];
+			$meme_learn_more = "http://knowyourmeme.com" . $matches[1];
+			echo "Meme Main URL: " . $meme_learn_more . "<br>";
 
 			//Get DOM for current selected meme to scrape additional content
-			$alt_dom = getDOM('http://knowyourmeme.com' . $matches[1] );
-			echo "MEME URL: " . $matches[1] . "<br>";
+			//for offline testing
+			$alt_dom = getDOM("http://knowyourmeme.com" . $matches[1]);
+			delay();
+			// $alt_dom = getDOM($offlinePages[$m]);
+			echo "Some other MEME URL: " . $matches[1] . "<br>";
 
 			//extract favorite count
-			// $meme_faves = getValue($alt_dom, $rgx_faves, true, $meme_faves_path);
-			// echo $meme_faves . "<br>";
-			// $fave_segment = extractContent($alt_dom, $meme_faves_path);
-			// preg_match($rgx_faves, $fave_segment[0], $matches);
-			// $meme_faves = $matches[1];
-			// echo $meme_faves . "<br>";
+			$meme_faves = getValue($alt_dom, $rgx_faves, true, $meme_faves_path);
+			$fave_segment = extractContent($alt_dom, $meme_faves_path);
+			preg_match($rgx_faves, $fave_segment[0], $matches);
+			$meme_faves = $matches[1];
+			echo "Meme Favorite Count: ".$meme_faves . "<br>";
 
-			// //extract view count
-			// $view_segment = extractContent($alt_dom, $meme_views_path);
-			// preg_match($rgx_views, $view_segment[0], $matches);
-			// $meme_views = $matches[1];
-			// echo $meme_views . "<br>";
+			//extract view count
+			$view_segment = extractContent($alt_dom, $meme_views_path);
+			preg_match($rgx_views, $view_segment[0], $matches);
+			$meme_views = $matches[1];
+			echo "Meme Views: " . $meme_views . "<br>";
 
 			// //extract meme origin
 			// $origin_segment = extractContent($alt_dom, $meme_origin_path);
 			// preg_match($rgx_origin, $origin_segment[0], $matches);
 			// $meme_origin = $matches[1];
-			// echo $meme_origin . "<br>";
+			// echo "Meme Origin: " . $meme_origin . "<br>";
 
 			echo "<br>";
 
+			$mog = new Mog($meme_name, $meme_img_url, $meme_views, $meme_faves, $meme_learn_more);
+			$mog->save();
+			// $m++;
 			$j++;
 		}
 		$i++;	
@@ -202,7 +213,7 @@ function mainExecute() {
 //Support Function: get's DOM at given url
 function getDOM($given) {
 	//set user agent (to avoid 403 errors) and save html from set destination
-	ini_set('user_agent','Mozilla/4.0 (compatible; MSIE 6.0)'); 
+	ini_set('user_agent','Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/45.0.2454.99 Safari/537.36'); 
 	$html = file_get_html($given);
 	return $html;
 }
@@ -231,6 +242,12 @@ function scrubMatch($given) {
 		$result = substr($given, (strpos($given,'>') + 1), (strrpos($given,'<')));
 	}
 	return $result;
+}
+
+function delay() {
+	$min = 2;
+	$max = 5;
+	sleep(rand($min, $max));
 }
 
 
