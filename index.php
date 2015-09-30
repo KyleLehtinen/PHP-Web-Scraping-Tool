@@ -1,56 +1,6 @@
 <?php 
-/*
-PSEUDO- MAIN:
 
-Set $alt_dom = '';
-Set $meme_name = '';
-Set $meme_img_url = '';
-Set $meme_pop = null;
-Set $meme_bias = null;
-Set $meme_origin = null;
-Set $meme_year = null;
-Set $meme_learn_more = '';
-
-Repeat set number of times:
-	Get initial HTML DOM + number
-	Find segment of DOM with images
-	Repeat for each DOM segment:
-		Reset $meme_name = title value of image
-		Reset $meme_img_url = href value of image
-		Reset $meme_learn_more = meme page detail href
-		Reset $alt_DOM to meme page detail href
-		Reset $meme_pop = popularity value
-		Reset $meme_bias = Views value
-		Reset $meme_origin = origin value
-		Reset $meme_year = year value
-		Run composeQuery function
-		Add to database
-	End Repeat
-End Repeat
-
-PSEUDO - composeQuery
-
-function composeQuery($meme_name, $meme_img_url, $meme_origin, $meme_year, $meme_learn_more) {
-	$query = 'insert into meme_list (name, img_url, popularity_value, bias_value, origin, origin_year, learn_more_url) '
-	 		  . 'values ($meme_name,$meme_img_url,$meme_pop,$meme_bias,$meme_origin,$meme_year,$meme_learn_more);';
-	Execute sql with query
-}
-*/
-
-/*
-Know Your Meme Desired Selectors
-
-Start URL: 'http://knowyourmeme.com/memes/popular'
-Pagination : .pagination_top > .pagination > a[href]
-Meme Contents : .entry_list .photo img
-*/
-
-//Includes
-// use PDO;
 include_once "simplehtmldom_1_5/simple_html_dom.php";
-// include_once "database.php";
-
-
 
 class Mog {
 	
@@ -249,39 +199,5 @@ function delay() {
 	$max = 5;
 	sleep(rand($min, $max));
 }
-
-
-
-
-
-
-// function checkMatch($matches) {
-// 	if 
-// }
-
-
-
-
-
-
-// foreach ($pages as $link) {
-// 	echo $link . "<br>";
-// }
-
-
-///SAMPLE CODE FOR SCRAPING
-// Create DOM from URL
-// $html = file_get_html('http://slashdot.org/');
-
-// // Find all article blocks
-// foreach($html->find('div.article') as $article) {
-//     $item['title']     = $article->find('div.title', 0)->plaintext;
-//     $item['intro']    = $article->find('div.intro', 0)->plaintext;
-//     $item['details'] = $article->find('div.details', 0)->plaintext;
-//     $articles[] = $item;
-// }
-
-// print_r($articles);
-
 
 
