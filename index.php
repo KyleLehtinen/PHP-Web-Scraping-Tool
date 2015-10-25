@@ -7,29 +7,31 @@ class Mog {
 	public $name;
 	public $srcOrigin;
 	public $imgUrl;
-	public $localPath;
+	// public $localPath;
 	public $srcViews;
 	public $srcFaves;
 	public $srcUrl;
 	public $rating;
 	public $rateBias;
 
-	public function __construct($name, $imgUrl, $localPath, $srcViews, $srcFaves, $srcUrl) {
+	public function __construct($name, $imgUrl, $srcViews, $srcFaves, $srcUrl) {
 		$this->name = $name;
 		// $this->srcOrigin = $srcOrigin;
 		$this->imgUrl = $imgUrl;
-		$this->localPath = $localPath;
+		// $this->localPath = $localPath;
 		$this->srcViews = $srcViews;
 		$this->srcFaves = $srcFaves;
+		$this->rating = ($srcViews * $srcFaves);
 		$this->srcUrl = $srcUrl;
 	}
 
 	public function save() {
 		try {
-			$db = new PDO('mysql:host=localhost;dbname=MemeSlam;charset=utf8','root','');
+			$db = new PDO('mysql:host=localhost;dbname=MemeSlamDev;charset=utf8','root','');
 			$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-			$query = $db->prepare("insert into MogMaster (name, imgUrl, localPath, srcViews, srcFaves, srcUrl) values (:name, :imgUrl, :localPath, :srcViews, :srcFaves, :srcUrl)");
-			$query->execute(['name'=>$this->name, 'imgUrl'=>$this->imgUrl, 'localPath'=>$this->localPath, 'srcViews'=>$this->srcViews, 'srcFaves'=>$this->srcFaves, 'srcUrl'=>$this->srcUrl]);
+			$query = $db->prepare("insert into MogMaster (name, img_url, src_url, rating) 
+				values (:name, :imgUrl, :srcUrl, :rating)");
+			$query->execute(['name'=>$this->name, 'imgUrl'=>$this->imgUrl, 'srcUrl'=>$this->srcUrl, 'rating'=>$this->rating]);
 		} catch (PDOException $e) {
 			die($e->getMessage());	
 		}
@@ -67,7 +69,7 @@ function mainExecute() {
 	//Variables to store scraped content
 	$meme_name = '';
 	$meme_img_url = '';
-	$meme_localPath = '';
+	// $meme_localPath = '';
 	$meme_faves = null;
 	$meme_views = null;
 	$meme_origin = null;
@@ -78,16 +80,15 @@ function mainExecute() {
 	$matches = [];
 	$alt_dom = '';
 	$i = 1;
+	$memeIDCounter = 1;
+	$page_count = 51;
 
 	//main work loop
-	while ($i < 3) {
-
-		// echo "Page Count: " . $i . "<br>";
-
+	while ($i < $page_count) {
 		//counter for tracking meme url index in $meme_href
 		$j = 0;
 
-		//used for offline pages array index
+		//counter used for offline pages array index
 		// $m = 0;
 
 		//pull and store scraped dom
@@ -101,8 +102,8 @@ function mainExecute() {
 		// 	$html = getDOM('http://knowyourmeme.com/memes/popular/page/' . $i);
 		// }
 
-		// echo "This HTML: " . $html . "<br>";
 		delay();
+
 		//These arrays should refer to the same memes on the same indexes
 		//extracts array used for meme images and titles
 		$img_content = extractContent($html, $meme_img_path);
@@ -112,9 +113,7 @@ function mainExecute() {
 		// print_r($img_content);
 		// print_r($meme_href);
 
-		foreach ($img_content as $key=>$curr) {
-			// getValue($dom, $rgx, $extract, $selector);
-			
+		foreach ($img_content as $curr) {			
 			//save meme name
 			$meme_name = getValue($curr, $rgx_title, false, '');
 			preg_match($rgx_title, $curr, $matches);
@@ -154,8 +153,9 @@ function mainExecute() {
 			echo "Meme Views: " . $meme_views . "<br>";
 
 			//Save image file to local path and collect path for saving
-			$meme_localPath = saveImg($meme_img_url, ($i . '-' . ($key + 1)));
-			echo "Meme Local Path: " . $meme_localPath;
+			saveImg($meme_img_url, $memeIDCounter);
+			$memeIDCounter++;
+
 
 			// //extract meme origin
 			// $origin_segment = extractContent($alt_dom, $meme_origin_path);
@@ -168,7 +168,7 @@ function mainExecute() {
 
 
 			//create Mog object and call save method
-			$mog = new Mog($meme_name, $meme_img_url, $meme_localPath, $meme_views, $meme_faves, $meme_learn_more);
+			$mog = new Mog($meme_name, $meme_img_url, $meme_views, $meme_faves, $meme_learn_more);
 			$mog->save();
 
 			// $m++;
@@ -177,8 +177,10 @@ function mainExecute() {
 			
 			$j++;
 		}
+		echo "Page $i Done...<br>";
 		$i++;	
 	}
+	echo "all pages done!";
 }
 
 //Support Function: get's DOM at given url
@@ -232,7 +234,6 @@ function saveImg($given, $index) {
 	curl_exec($ch);
 	curl_close($ch);
 	fclose($fp);
-	return $path;
 }
 
 
