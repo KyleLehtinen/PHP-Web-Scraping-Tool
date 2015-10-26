@@ -63,9 +63,9 @@ function mainExecute() {
 	//support variables for logic
 	$matches = [];
 	$alt_dom = '';
-	$i = 1;
+	$i = 0;
 	$memeIDCounter = 1;
-	$page_count = 2;
+	$page_count = 50;
 	$csvFileName = 'mogmaster.csv';
 	$toCSV = true;
 	
@@ -104,7 +104,7 @@ function mainExecute() {
 	createCSV($csvFileName);
 	
 	//main work loop
-	while ($i < $page_count) {
+	while ($i <= $page_count) {
 
 		//counter for tracking meme url index in $meme_href
 		$j = 0;
@@ -113,8 +113,7 @@ function mainExecute() {
 		// $m = 0;
 
 		//pull and store scraped dom
-		$html = getDOM('http://knowyourmeme.com/memes/popular/page/' . $i);
-
+		$html = getDOM('http://knowyourmeme.com/memes/popular/page/' . ($i + 1));
 		delay();
 
 		//These arrays should refer to the same memes on the same indexes
@@ -134,24 +133,24 @@ function mainExecute() {
 			} else {
 				$active = 0;
 			}
-			echo "Meme NSFW: $active <br>";
+			echo "Meme NSFW: $active" . PHP_EOL;
 
 			// //save meme name
 			$meme_name = getValue($curr, $rgx_title, false, '');
 			preg_match($rgx_title, $curr, $matches);
 			$meme_name = $matches[1];
-			echo "Meme Name: " . $meme_name . "<br>";
+			echo "Meme Name: " . $meme_name . PHP_EOL;
 			
 			//save meme img url
 			$meme_img_url = getValue($curr, $rgx_src, false, '');
 			preg_match($rgx_src, $curr, $matches);
 			$meme_img_url = $matches[1];
-			echo "Meme IMG URL: " . $meme_img_url . "<br>";
+			echo "Meme IMG URL: " . $meme_img_url . PHP_EOL;
 
 			//get href for current meme in $curr and set variable
 			preg_match($rgx_pg_href, $meme_href[$j], $matches);
 			$meme_learn_more = "http://knowyourmeme.com" . $matches[1];
-			echo "Meme Main URL: " . $meme_learn_more . "<br>";
+			echo "Meme Main URL: " . $meme_learn_more . PHP_EOL;
 
 			//Get DOM for current selected meme to scrape additional content
 			//for offline testing
@@ -164,13 +163,13 @@ function mainExecute() {
 			$fave_segment = extractContent($alt_dom, $meme_faves_path);
 			preg_match($rgx_faves, $fave_segment[0], $matches);
 			$meme_faves = $matches[1];
-			echo "Meme Favorite Count: ".$meme_faves . "<br>";
+			echo "Meme Favorite Count: ".$meme_faves . PHP_EOL;
 
 			//extract view count
 			$view_segment = extractContent($alt_dom, $meme_views_path);
 			preg_match($rgx_views, $view_segment[0], $matches);
 			$meme_views = $matches[1];
-			echo "Meme Views: " . $meme_views . "<br>";
+			echo "Meme Views: " . $meme_views . PHP_EOL;
 
 			//Save image file to local path and collect path for saving
 			saveImg($meme_img_url, $memeIDCounter);
@@ -182,7 +181,7 @@ function mainExecute() {
 			// $meme_origin = $matches[1];
 			// echo "Meme Origin: " . $meme_origin . "<br>";
 
-			echo "<br>";
+			echo PHP_EOL;
 
 			//create Mog object and call save method
 			$mog = new Mog($meme_name, $meme_img_url, $meme_views, $meme_faves, $meme_learn_more, $active);
@@ -192,14 +191,16 @@ function mainExecute() {
 				$mog->saveToDB();	
 			}
 
+			echo "Total Memes Scraped: $memeIDCounter" . PHP_EOL;
+
 			// $m++;
 			
 			$j++;
 		}
-		echo "Page $i Done...<br>";
+		echo "Page $i Done..." . PHP_EOL;
 		$i++;	
 	}
-	echo "all pages done!";
+	echo "all pages done!" . PHP_EOL;
 }
 
 //Get's DOM at given url
@@ -246,8 +247,8 @@ function scrubMatch($given) {
 
 //Sleeps scraper to avoid accidental DDOS
 function delay() {
-	$min = 1;
-	$max = 3;
+	$min = 2;
+	$max = 5;
 	sleep(rand($min, $max));
 }
 
