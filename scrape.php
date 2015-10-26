@@ -129,9 +129,9 @@ function mainExecute() {
 			$meme_nsfw = extractContent($curr, $meme_nsfw_path);
 
 			if(!empty($meme_nsfw)) {
-				$active = 1;
-			} else {
 				$active = 0;
+			} else {
+				$active = 1;
 			}
 			echo "Meme NSFW: $active" . PHP_EOL;
 
@@ -197,8 +197,10 @@ function mainExecute() {
 			
 			$j++;
 		}
-		echo "Page $i Done..." . PHP_EOL;
+		echo 'Page ' . ($i + 1) . 'Done...' . PHP_EOL;
+		echo PHP_EOL;
 		$i++;	
+		sleep(rand(15,60));
 	}
 	echo "all pages done!" . PHP_EOL;
 }
